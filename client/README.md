@@ -57,7 +57,7 @@ Edit `.env` and fill in your credentials (see `.env.example` for details).
 npm run dev
 ```
 
-This starts both the Express server (port 3000) and Vite dev server (port 5173) concurrently.
+This starts both the Express server (port 3001) and Vite dev server (port 5173) concurrently.
 
 4. **Build for production**
 

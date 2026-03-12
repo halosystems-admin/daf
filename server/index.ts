@@ -3,13 +3,17 @@ import cors from 'cors';
 import session from 'express-session';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import http from 'http';
 import { config } from './config';
 import authRoutes from './routes/auth';
 import driveRoutes from './routes/drive';
 import aiRoutes from './routes/ai';
 import haloRoutes from './routes/halo';
+import calendarRoutes from './routes/calendar';
 import requestTemplateRoutes from './routes/requestTemplate';
-import { startScheduler } from './jobs/scheduler';
+import { attachTranscribeWebSocket } from './ws/transcribe';
+// Conversion scheduler disabled — was running in background for txt→docx→pdf
+// import { startScheduler } from './jobs/scheduler';
 
 const app = express();
 
@@ -64,6 +68,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/drive', driveRoutes);
 app.use('/api/ai', aiLimiter, aiRoutes);
 app.use('/api/halo', aiLimiter, haloRoutes);
+app.use('/api/calendar', calendarRoutes);
 app.use('/api/request-template', requestTemplateRoutes);
 
 // Health check
@@ -86,7 +91,9 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: 'An unexpected error occurred.' });
 });
 
-app.listen(config.port, () => {
+const server = http.createServer(app);
+attachTranscribeWebSocket(server);
+
+server.listen(config.port, () => {
   console.log(`Halo server running on port ${config.port} (${config.isProduction ? 'production' : 'development'})`);
-  startScheduler();
 });
