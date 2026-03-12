@@ -7,7 +7,7 @@ const getRedirectUri = (): string => {
   if (config.isProduction) {
     return `${config.productionUrl}/api/auth/callback`;
   }
-  return 'http://localhost:3000/api/auth/callback';
+  return `http://localhost:${config.port}/api/auth/callback`;
 };
 
 router.get('/login-url', (_req: Request, res: Response) => {
@@ -17,7 +17,10 @@ router.get('/login-url', (_req: Request, res: Response) => {
   }
 
   const scopes = [
+    // Full Drive access for patient folders and files
     'https://www.googleapis.com/auth/drive',
+    // Read/write access for bookings calendar events (two-way sync)
+    'https://www.googleapis.com/auth/calendar.events',
     'openid',
     'email',
     'profile',

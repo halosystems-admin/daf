@@ -3,9 +3,13 @@ import { Sidebar } from './components/Sidebar';
 import { PatientWorkspace } from './pages/PatientWorkspace';
 import { Toast } from './components/Toast';
 import { SettingsModal } from './components/SettingsModal';
-import { checkAuth, getLoginUrl, logout, fetchAllPatients, createPatient, deletePatient, loadSettings, saveSettings, ApiError } from './services/api';
-import type { Patient, UserSettings } from '../../shared/types';
+import { checkAuth, getLoginUrl, logout, fetchAllPatients, warmAndListFiles, createPatient, deletePatient, loadSettings, saveSettings, ApiError, fetchTodayEvents } from './services/api';
+import type { Patient, UserSettings, CalendarEvent } from '../../shared/types';
 import { LogIn, Loader, X, UserPlus, Calendar, Users, AlertTriangle, Trash2 } from 'lucide-react';
+import { CalendarPage } from './pages/CalendarPage';
+
+const ENABLE_EXPANDED_CALENDAR =
+  import.meta.env.VITE_ENABLE_EXPANDED_CALENDAR !== 'false';
 
 export const App = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -40,6 +44,12 @@ export const App = () => {
       } catch { return []; }
     }
   );
+
+  // Calendar / bookings
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarPrepEvent, setCalendarPrepEvent] = useState<CalendarEvent | null>(null);
+  const [activeMainView, setActiveMainView] = useState<'workspace' | 'calendar'>('workspace');
 
   // Persist selected patient to sessionStorage so it survives page refresh
   // Also track recently opened patients in localStorage
@@ -81,7 +91,7 @@ export const App = () => {
         // First verify server is reachable
         const healthCheck = await fetch('/api/health', { credentials: 'include' }).catch(() => null);
         if (!healthCheck || !healthCheck.ok) {
-          console.warn('Server health check failed - make sure server is running on port 3000');
+          console.warn('Server health check failed - make sure server is running on port 3001');
         }
         
         const auth = await checkAuth();
@@ -94,10 +104,46 @@ export const App = () => {
           if (storedId && !loadedPatients.find(p => p.id === storedId)) {
             selectPatient(null);
           }
+          // Prefetch file list for the patient most likely to be opened (warms Drive + server cache)
+          const prefetchId = storedId && loadedPatients.some(p => p.id === storedId)
+            ? storedId
+            : loadedPatients[0]?.id;
+          if (prefetchId) {
+            warmAndListFiles(prefetchId, 24).catch(() => {});
+          }
           // Load settings in background
           loadSettings().then(res => {
             if (res.settings) setUserSettings(res.settings);
           }).catch(() => {});
+
+          // Load today\u2019s calendar events in background
+          setCalendarLoading(true);
+          fetchTodayEvents()
+            .then(({ events }) => {
+              // Best-effort name match here so sidebar calendar gets patientId
+              const normalize = (name: string) => name.trim().toLowerCase();
+              const mapped = events.map((ev) => {
+                const title = ev.title?.trim().toLowerCase() || '';
+                let patientId: string | undefined;
+                if (title) {
+                  const byExact = loadedPatients.find(p => normalize(p.name) === title);
+                  if (byExact) {
+                    patientId = byExact.id;
+                  } else if (title.includes(',')) {
+                    const [last, first] = title.split(',').map(s => s.trim());
+                    const reordered = `${first} ${last}`.toLowerCase();
+                    const byReordered = loadedPatients.find(p => normalize(p.name) === reordered);
+                    if (byReordered) patientId = byReordered.id;
+                  }
+                }
+                return { ...ev, patientId };
+              });
+              setCalendarEvents(mapped);
+            })
+            .catch(() => {
+              setCalendarEvents([]);
+            })
+            .finally(() => setCalendarLoading(false));
         }
       } catch (error) {
         console.error('Session check failed:', error);
@@ -129,6 +175,7 @@ export const App = () => {
     await logout();
     setIsSignedIn(false);
     selectPatient(null);
+    setActiveMainView('workspace');
   };
 
   const openCreateModal = () => {
@@ -166,6 +213,13 @@ export const App = () => {
 
   const handleDeleteRequest = (patient: Patient) => {
     setPatientToDelete(patient);
+  };
+
+  const handleSelectCalendarEvent = (event: CalendarEvent) => {
+    if (!event.patientId) return;
+    selectPatient(event.patientId);
+    setCalendarPrepEvent(event);
+    setActiveMainView('workspace');
   };
 
   const confirmDelete = async () => {
@@ -235,17 +289,38 @@ export const App = () => {
           onOpenSettings={() => setShowSettings(true)}
           userEmail={userEmail}
           userSettings={userSettings}
+          calendarEvents={calendarEvents}
+          calendarLoading={calendarLoading}
+          onSelectCalendarEvent={handleSelectCalendarEvent}
+          onOpenFullCalendar={
+            ENABLE_EXPANDED_CALENDAR ? () => setActiveMainView('calendar') : undefined
+          }
         />
       </div>
 
       <div className={`flex-1 flex flex-col h-screen relative ${!selectedPatientId ? 'hidden md:flex' : 'flex'}`}>
-        {activePatient ? (
+        {ENABLE_EXPANDED_CALENDAR && activeMainView === 'calendar' ? (
+          <CalendarPage
+            patients={patients}
+            onSelectPatientFromEvent={(id) => {
+              selectPatient(id);
+              setActiveMainView('workspace');
+            }}
+            onClose={() => setActiveMainView('workspace')}
+          />
+        ) : activePatient ? (
           <PatientWorkspace
+            key={activePatient.id}
             patient={activePatient}
             onBack={() => selectPatient(null)}
             onDataChange={refreshPatients}
             onToast={showToast}
             templateId={userSettings?.templateId || 'clinical_note'}
+            calendarPrepEvent={
+              calendarPrepEvent && calendarPrepEvent.patientId === activePatient.id
+                ? calendarPrepEvent
+                : null
+            }
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-300 relative overflow-hidden">

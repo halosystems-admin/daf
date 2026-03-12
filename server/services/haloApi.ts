@@ -7,6 +7,28 @@ import { config } from '../config';
 
 const BASE = config.haloApiBaseUrl;
 
+const HALO_REQUEST_TIMEOUT_MS = 90_000;
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs: number = HALO_REQUEST_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeoutId);
+    return res;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Halo note service took too long to respond. Please try again.');
+    }
+    throw err;
+  }
+}
+
 export interface NoteField {
   label: string;
   body: string;
@@ -114,6 +136,14 @@ function normalizeNotesResponse(data: unknown, templateId: string): HaloNote[] {
     const out = normalizeNotesResponse(obj.data, templateId);
     if (out.length > 0) return out;
   }
+  if (obj.note != null && typeof obj.note === 'object') {
+    const out = normalizeNotesResponse(obj.note, templateId);
+    if (out.length > 0) return out;
+  }
+  if (obj.result != null && typeof obj.result === 'object') {
+    const out = normalizeNotesResponse(obj.result, templateId);
+    if (out.length > 0) return out;
+  }
 
   // Try structured fields from the root object (e.g. { Subjective: "...", Objective: "..." })
   const fields = extractFieldsFromNoteData(obj);
@@ -123,11 +153,25 @@ function normalizeNotesResponse(data: unknown, templateId: string): HaloNote[] {
     return [oneNote(content, title, fields)];
   }
 
-  const content = obj.content ?? obj.text ?? obj.note ?? obj.body ?? obj.result;
+  const content =
+    obj.content ??
+    obj.text ??
+    obj.note ??
+    obj.body ??
+    obj.result ??
+    obj.output ??
+    obj.generated_note ??
+    obj.note_content ??
+    obj.message;
   if (typeof content === 'string' && content.trim()) {
     return [oneNote(content.trim(), (obj.title as string) ?? (obj.name as string) ?? 'Note 1')];
   }
 
+  // Unrecognized shape: log so we can extend the normalizer for the real HALO response
+  if (typeof obj === 'object' && obj !== null) {
+    const keys = Object.keys(obj).filter((k) => !k.startsWith('_'));
+    console.warn('[Halo] generate_note response not recognized. Top-level keys:', keys.join(', ') || '(none)');
+  }
   return [];
 }
 
@@ -165,19 +209,36 @@ export interface GenerateNoteParams {
 export async function generateNote(params: GenerateNoteParams): Promise<HaloNote[] | Buffer> {
   const { return_type } = params;
 
-  const res = await fetch(`${BASE}/generate_note`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      user_id: params.user_id,
-      template_id: params.template_id,
-      text: params.text,
-      return_type,
-    }),
-  });
+  const res = await fetchWithTimeout(
+    `${BASE}/generate_note`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: params.user_id,
+        template_id: params.template_id,
+        text: params.text,
+        return_type,
+      }),
+    },
+    HALO_REQUEST_TIMEOUT_MS
+  );
 
   if (!res.ok) {
+    const body = await res.text();
     if (res.status === 400) throw new Error('Invalid request to Halo note generation.');
+    if (res.status === 404) {
+      try {
+        const parsed = body ? JSON.parse(body) : null;
+        if (parsed && typeof parsed.detail === 'string') console.error('[Halo] 404 detail:', parsed.detail);
+        else if (body) console.error('[Halo] 404 body:', body.slice(0, 200));
+      } catch {
+        if (body) console.error('[Halo] 404 body:', body.slice(0, 200));
+      }
+      throw new Error(
+        'Halo returned 404: template or user not found. Check that template_id and HALO_USER_ID (or user_id) exist in the Halo service. If the Halo API base URL or paths changed, update HALO_API_BASE_URL.'
+      );
+    }
     if (res.status === 502) throw new Error('Halo note service unavailable. Please try again.');
     throw new Error(`Halo generate_note error: ${res.status}`);
   }

@@ -6,11 +6,12 @@
   "scripts": {
     "dev:server": "nodemon --exec ts-node server/index.ts",
     "dev:client": "cd client && npm run dev",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "echo \"Client dev server: http://localhost:5173\" && concurrently \"npm run dev:server\" \"wait-on http://localhost:3001/api/health && npm run dev:client\"",
     "build": "cd client && npm run build && cd .. && tsc",
     "build:server": "tsc",
     "build:client": "cd client && npm run build",
-    "start": "node dist/server/index.js"
+    "start": "node dist/server/index.js",
+    "test:calendar": "ts-node server/tests/calendar-normalise.test.ts"
   },
   "keywords": [],
   "author": "",
@@ -28,7 +29,8 @@
     "googleapis": "^171.4.0",
     "mammoth": "^1.11.0",
     "nodemailer": "^8.0.1",
-    "pdf-parse": "^2.4.5"
+    "pdf-parse": "^2.4.5",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -38,9 +40,11 @@
     "@types/node": "^25.2.2",
     "@types/nodemailer": "^7.0.10",
     "@types/pdf-parse": "^1.1.5",
+    "@types/ws": "^8.18.1",
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wait-on": "^8.0.1"
   }
 }

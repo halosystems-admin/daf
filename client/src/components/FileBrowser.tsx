@@ -25,6 +25,10 @@ const isFolder = (file: DriveFile): boolean => file.mimeType === FOLDER_MIME_TYP
 
 const FileSkeleton: React.FC = () => (
   <div className="space-y-3">
+    <div className="flex items-center justify-center gap-2 py-4 text-slate-500">
+      <div className="h-5 w-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+      <span className="text-sm font-medium">Loading files…</span>
+    </div>
     {[1, 2, 3].map((i) => (
       <div key={i} className="flex items-center p-4 bg-white border border-slate-200 rounded-xl animate-pulse">
         <div className="w-11 h-11 bg-slate-200 rounded-lg mr-4" />

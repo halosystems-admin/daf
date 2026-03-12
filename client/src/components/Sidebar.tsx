@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { Patient, UserSettings } from '../../../shared/types';
-import { Plus, LogOut, Search, Trash2, ChevronRight, Users, Clock, Settings, Loader2 } from 'lucide-react';
+import type { Patient, UserSettings, CalendarEvent } from '../../../shared/types';
+import { Plus, LogOut, Search, Trash2, ChevronRight, Users, Clock, Settings, Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { searchPatientsByConcept } from '../services/api';
+import { SidebarCalendar } from './SidebarCalendar';
 
 interface SidebarProps {
   patients: Patient[];
@@ -14,6 +15,10 @@ interface SidebarProps {
   onOpenSettings: () => void;
   userEmail?: string;
   userSettings?: UserSettings | null;
+  calendarEvents?: CalendarEvent[];
+  calendarLoading?: boolean;
+  onSelectCalendarEvent?: (event: CalendarEvent) => void;
+  onOpenFullCalendar?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -27,10 +32,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSettings,
   userEmail,
   userSettings,
+  calendarEvents = [],
+  calendarLoading = false,
+  onSelectCalendarEvent,
+  onOpenFullCalendar,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [aiSearchResults, setAiSearchResults] = useState<string[] | null>(null);
   const [isAiSearching, setIsAiSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState<'patients' | 'calendar'>('patients');
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Local filter (instant)
@@ -39,8 +49,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     p.dob.includes(searchTerm)
   );
 
-  // Trigger AI concept search after debounce when local results are few
+  // Trigger AI concept search after debounce when local results are few (patients tab only)
   useEffect(() => {
+    if (activeTab !== 'patients') return;
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     setAiSearchResults(null);
 
@@ -61,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
-  }, [searchTerm, patients]);
+  }, [searchTerm, patients, activeTab]);
 
   // Merge local + AI results
   const filteredPatients = searchTerm.trim()
@@ -119,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div className="w-80 bg-slate-900 h-full flex flex-col text-slate-300 border-r border-slate-800 shadow-2xl">
       <div className="p-6">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-sky-900/20">
               <img src="/halo-icon.png" alt="HALO" className="w-full h-full object-cover" draggable={false} />
@@ -137,26 +148,77 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Settings size={20} />
           </button>
         </div>
-        <div className="relative group">
-          <Search className="absolute left-3 top-3 text-slate-500 group-focus-within:text-sky-400 transition-colors" size={18} />
-          <input
-            type="text"
-            placeholder="Search name, DOB, or condition..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-800/50 focus:bg-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/50 border border-transparent focus:border-sky-500/30 transition-all placeholder:text-slate-600"
-          />
+        <div className="flex items-center justify-between mb-3">
+          <div className="relative group flex-1 mr-2">
+            {activeTab === 'patients' && (
+              <>
+                <Search className="absolute left-3 top-3 text-slate-500 group-focus-within:text-sky-400 transition-colors" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search name, DOB, or condition..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-slate-800/50 focus:bg-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/50 border border-transparent focus:border-sky-500/30 transition-all placeholder:text-slate-600"
+                />
+              </>
+            )}
+          </div>
+          <div className="flex rounded-xl bg-slate-800/70 border border-slate-700 overflow-hidden shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab('patients')}
+              className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+                activeTab === 'patients'
+                  ? 'bg-sky-600 text-white'
+                  : 'text-slate-400 hover:text-slate-100'
+              }`}
+            >
+              Patients
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('calendar')}
+              className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1 transition-colors ${
+                activeTab === 'calendar'
+                  ? 'bg-sky-600 text-white'
+                  : 'text-slate-400 hover:text-slate-100'
+              }`}
+            >
+              <CalendarIcon size={12} />
+              Day
+            </button>
+          </div>
         </div>
-        {isAiSearching && searchTerm.length >= 3 && (
-          <div className="flex items-center gap-2 mt-2 px-1">
+        {activeTab === 'patients' && isAiSearching && searchTerm.length >= 3 && (
+          <div className="flex items-center gap-2 mt-1 px-1">
             <Loader2 size={12} className="text-sky-500 animate-spin" />
             <span className="text-[10px] text-sky-500 font-medium uppercase tracking-wider">Scanning patient records...</span>
           </div>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
-        {!searchTerm && patients.length > 0 && (
+      {activeTab === 'calendar' ? (
+        <div className="flex-1 flex flex-col">
+          <div className="px-4 pb-2">
+            <button
+              type="button"
+              onClick={onOpenFullCalendar}
+              className="w-full text-xs font-semibold text-slate-300 bg-slate-800/70 hover:bg-slate-700 border border-slate-700/80 rounded-xl px-3 py-2 flex items-center justify-center gap-2 transition-colors"
+            >
+              <CalendarIcon size={12} />
+              Open full calendar
+            </button>
+          </div>
+          <SidebarCalendar
+            events={calendarEvents}
+            patients={patients}
+            loading={calendarLoading}
+            onSelectEvent={(ev) => onSelectCalendarEvent && onSelectCalendarEvent(ev)}
+          />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
+          {!searchTerm && patients.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-2 px-2 mb-2">
               <Clock size={12} className="text-sky-500"/>
@@ -179,8 +241,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ) : (
             filteredPatients.map(p => renderPatientRow(p, 'all'))
           )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="p-4 border-t border-slate-800 bg-slate-900/50 backdrop-blur-sm z-10">
         <button onClick={onCreatePatient} className="w-full bg-sky-600 hover:bg-sky-500 text-white p-3.5 rounded-xl font-bold transition-all shadow-lg shadow-sky-900/20 flex items-center justify-center gap-2 mb-3 active:scale-[0.98]">

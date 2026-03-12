@@ -86,3 +86,50 @@ export interface HaloTemplate {
   name?: string;
   [key: string]: unknown;
 }
+
+export interface CalendarAttachment {
+  fileId: string;
+  name?: string;
+  url?: string;
+  mimeType?: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  /** Underlying Google Calendar ID, if different from id */
+  calendarId?: string;
+  start: string;
+  end: string;
+  title: string;
+  description?: string;
+  location?: string;
+  /** Matched HALO patient id, if any */
+  patientId?: string;
+  /** Optional display color hint for UI */
+  color?: string;
+  /** Attached Drive files or attachment metadata */
+  attachments?: CalendarAttachment[];
+  /** Additional metadata from Google extendedProperties.private */
+  extendedProps?: Record<string, string>;
+}
+
+export interface ScribeSession {
+  /** Unique session id (per patient). */
+  id: string;
+  /** Google Drive patient folder id this session belongs to. */
+  patientId: string;
+  /** ISO timestamp when the session was created. */
+  createdAt: string;
+  /** Full transcript text used to generate notes. */
+  transcript: string;
+  /** Optional free-text context captured alongside the transcript. */
+  context?: string;
+  /** Template IDs that were used to generate notes in this session. */
+  templates?: string[];
+  /** Human-readable note titles generated in this session (for display only). */
+  noteTitles?: string[];
+  /** Generated note content for this session (so we can show the actual note, not just transcript). */
+  notes?: Array<{ noteId: string; title: string; content: string; template_id: string }>;
+  /** Short main complaint/summary for list display (e.g. "Ankle Fracture"). */
+  mainComplaint?: string;
+}
