@@ -77,12 +77,65 @@ export interface UserSettings {
   modules?: UserModulesSettings;
 }
 
+export type EvidenceSourceType =
+  | 'guideline'
+  | 'trial'
+  | 'review'
+  | 'drug_label'
+  | 'public_health'
+  | 'other';
+
+export interface EvidenceSource {
+  id: string;
+  title: string;
+  organizationOrJournal?: string;
+  year?: string;
+  type: EvidenceSourceType;
+  url?: string;
+  relevanceNote?: string;
+}
+
+export interface EvidenceSections {
+  bottomLine: string;
+  keyEvidence: string;
+  /** Present only when a patient is in context; omit for general queries. */
+  patientApplication?: string;
+  caveats: string;
+  practicalTakeaways: string;
+}
+
+export interface EvidenceAnswerSegment {
+  text: string;
+  /** Matches EvidenceSource.id values for inline citation chips. */
+  sourceIds: string[];
+}
+
+export interface EvidenceImageRef {
+  id: string;
+  title?: string;
+  url?: string;
+  caption?: string;
+  sourceId?: string;
+}
+
+export interface EvidenceQueryResponse {
+  query: string;
+  sections: EvidenceSections;
+  sources: EvidenceSource[];
+  /** Optional ordered segments for inline citations without parsing free text. */
+  answerSegments?: EvidenceAnswerSegment[];
+  images: EvidenceImageRef[];
+}
+
 export interface UserModulesSettings {
   admissions: boolean;
+  /** When false, Evidence tab is hidden. Defaults to true. */
+  evidence?: boolean;
 }
 
 export const DEFAULT_USER_MODULES: UserModulesSettings = {
   admissions: false,
+  evidence: true,
 };
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {

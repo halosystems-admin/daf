@@ -11,6 +11,7 @@ import type {
   CalendarEvent,
   ScribeSession,
   ScribeSessionNote,
+  EvidenceQueryResponse,
 } from '../../../shared/types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -614,6 +615,17 @@ export const askHalo = async (
     body: JSON.stringify({ patientId, question, history, attachments }),
   });
 };
+
+/** Structured clinical evidence (HALO Evidence workspace). */
+export const evidenceQuery = (params: {
+  query: string;
+  patientId?: string;
+  patientName?: string;
+}): Promise<EvidenceQueryResponse> =>
+  request<EvidenceQueryResponse>('/api/evidence/query', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
 
 /**
  * Stream HALO chat response via SSE. Calls onChunk for each text chunk,

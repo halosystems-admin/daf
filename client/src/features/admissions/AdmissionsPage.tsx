@@ -31,7 +31,7 @@ interface Props {
   onToast: (message: string, type: 'success' | 'error' | 'info') => void;
   onOpenPatient: (
     patientId: string,
-    options?: { tab?: 'overview' | 'notes' | 'chat' | 'sessions'; freshSession?: boolean }
+    options?: { tab?: 'overview' | 'notes' | 'chat' | 'sessions' | 'evidence'; freshSession?: boolean }
   ) => void;
 }
 

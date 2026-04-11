@@ -422,6 +422,7 @@ export const App = () => {
                 ? calendarPrepEvent
                 : null
             }
+            evidenceEnabled={userSettings?.modules?.evidence !== false}
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-300 relative overflow-hidden">
