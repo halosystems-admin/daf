@@ -418,7 +418,7 @@ export const CalendarPage: React.FC<Props> = ({
   );
 
   return (
-    <div className="halo-calendar-page flex h-full flex-col bg-[linear-gradient(180deg,#f6fbfe_0%,#edf7fb_100%)]">
+    <div className="halo-calendar-page flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,#f6fbfe_0%,#edf7fb_100%)]">
       <div className="border-b border-[#dceaf2] bg-white/92 backdrop-blur-sm">
         <div className="mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-4 px-5 py-5 md:px-8">
           <div className="flex items-center gap-4">

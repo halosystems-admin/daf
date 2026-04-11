@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   closestCorners,
   DndContext,
@@ -59,8 +59,15 @@ export const AdmissionsPage: React.FC<Props> = ({ patients, onToast, onOpenPatie
   const [tagInput, setTagInput] = useState('');
   const [doctorInput, setDoctorInput] = useState('');
   const [activeDragCard, setActiveDragCard] = useState<AdmissionsCard | null>(null);
+  const addWardSectionRef = useRef<HTMLDivElement>(null);
+  const newWardInputRef = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  const scrollToAddWard = useCallback(() => {
+    addWardSectionRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
+    window.setTimeout(() => newWardInputRef.current?.focus(), 350);
+  }, []);
 
   const patientsById = useMemo(
     () => new Map(patients.map((patient) => [patient.id, patient])),
@@ -450,9 +457,10 @@ export const AdmissionsPage: React.FC<Props> = ({ patients, onToast, onOpenPatie
         saving={saving}
         updatedAt={board.updatedAt}
         onAddPatient={() => handleOpenAddPatient(board.columns[0]?.id || '')}
+        onAddWardRequest={scrollToAddWard}
       />
 
-      <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden px-4 py-4 md:px-6">
+      <div className="min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-pl-4 scroll-pr-4 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -461,7 +469,7 @@ export const AdmissionsPage: React.FC<Props> = ({ patients, onToast, onOpenPatie
           onDragCancel={() => setActiveDragCard(null)}
         >
           <SortableContext items={board.columns.map((column) => column.id)} strategy={horizontalListSortingStrategy}>
-            <div className="flex h-full min-w-max items-start gap-6 pb-4">
+            <div className="flex h-full min-h-0 min-w-max items-stretch gap-6 pb-4">
               {visibleBoard.columns.map((column) => {
                 const originalColumn = board.columns.find((item) => item.id === column.id) || column;
                 return (
@@ -485,10 +493,14 @@ export const AdmissionsPage: React.FC<Props> = ({ patients, onToast, onOpenPatie
                 );
               })}
 
-              <div className="w-[260px] shrink-0 rounded-xl border border-dashed border-slate-200 bg-white/60 p-4 shadow-sm">
+              <div
+                ref={addWardSectionRef}
+                className="w-[260px] shrink-0 snap-start snap-always rounded-xl border border-dashed border-slate-200 bg-white/60 p-4 shadow-sm"
+              >
                 <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-slate-500">Add ward</p>
                 <p className="mt-1 text-sm text-slate-400">New unit or stage for inpatients.</p>
                 <input
+                  ref={newWardInputRef}
                   value={newWardTitle}
                   onChange={(event) => setNewWardTitle(event.target.value)}
                   onKeyDown={(event) => {
