@@ -464,6 +464,39 @@ export const SettingsModal: React.FC<Props> = ({
                   />
                 </button>
               </div>
+
+              <div className="mt-4 flex items-start justify-between gap-4 border-t border-slate-200 pt-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Evidence</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Show the Evidence tab for structured clinical evidence search with sources.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      modules: {
+                        ...(prev.modules || { admissions: false }),
+                        evidence: !(prev.modules?.evidence ?? true),
+                      },
+                    }))
+                  }
+                  className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition ${
+                    (form.modules?.evidence ?? true)
+                      ? 'border-cyan-500 bg-cyan-500'
+                      : 'border-slate-200 bg-white'
+                  }`}
+                  aria-pressed={(form.modules?.evidence ?? true)}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition ${
+                      (form.modules?.evidence ?? true) ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -474,7 +507,8 @@ export const SettingsModal: React.FC<Props> = ({
         templateTab !== normalizeUserSettings(settings || DEFAULT_SETTINGS).noteTemplate ||
         form.customTemplateContent !== normalizeUserSettings(settings || DEFAULT_SETTINGS).customTemplateContent ||
         form.templateId !== normalizeUserSettings(settings || DEFAULT_SETTINGS).templateId ||
-        (form.modules?.admissions ?? false) !== (normalizeUserSettings(settings || DEFAULT_SETTINGS).modules?.admissions ?? false) ? (
+        (form.modules?.admissions ?? false) !== (normalizeUserSettings(settings || DEFAULT_SETTINGS).modules?.admissions ?? false) ||
+        (form.modules?.evidence ?? true) !== (normalizeUserSettings(settings || DEFAULT_SETTINGS).modules?.evidence ?? true) ? (
           <div className="border-t border-slate-100 p-4 bg-slate-50 flex gap-3">
             <button
               onClick={() => {

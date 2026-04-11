@@ -46,6 +46,64 @@ ${conversationHistory ? `Previous conversation:\n${conversationHistory}\n` : ''}
 User question: ${question}`;
 }
 
+/**
+ * Evidence workspace: structured JSON with sections, representative sources, and optional inline segments for citations.
+ * When patientContext is empty, the model should omit patientApplication in output (or set it to empty string).
+ */
+export function evidenceStructuredPrompt(
+  question: string,
+  patientContext: string,
+  patientName?: string
+): string {
+  const hasPatient = Boolean(patientContext.trim());
+  return `You are HALO Evidence, a clinical decision-support assistant. The user asked a medical evidence question.
+
+Your task:
+1. Synthesize a careful, professional answer grounded in established medical knowledge.
+2. ${hasPatient ? `Use the patient context below to tailor "patientApplication" — how this applies to this specific patient. If context is insufficient, say so briefly in that section.` : 'There is NO patient attached. Omit the patientApplication field entirely from the JSON (or use null).'}
+3. List representative sources a clinician would recognise (guidelines, key trials, reviews, drug labelling, public health bodies). Use plausible titles and organisations; if you are uncertain about a specific citation, prefer general wording ("per major society guidelines") and lower source strength rather than inventing precise bibliographic data. Never fabricate DOIs or URLs — omit "url" unless you are highly confident a stable public URL exists.
+
+Clinical question:
+${question}
+
+${hasPatient ? `Patient name (for tone only): ${patientName || 'Unknown'}
+Patient folder / record context (may include file excerpts):
+${patientContext}
+` : 'No patient folder context is attached.\n'}
+
+Return ONLY valid JSON matching this exact shape (no markdown fences):
+{
+  "sections": {
+    "bottomLine": "string — 2-4 sentences",
+    "keyEvidence": "string — main evidence narrative with clear structure (short paragraphs allowed)",
+    ${hasPatient ? '"patientApplication": "string — tailored to this patient",' : ''}
+    "caveats": "string — uncertainty, limits of evidence, when to seek specialist input",
+    "practicalTakeaways": "string — bullet-style sentences OK"
+  },
+  "sources": [
+    {
+      "id": "1",
+      "title": "string",
+      "organizationOrJournal": "string optional",
+      "year": "string optional",
+      "type": "guideline" | "trial" | "review" | "drug_label" | "public_health" | "other",
+      "url": "string optional — only if known stable link",
+      "relevanceNote": "string — one line why this source matters"
+    }
+  ],
+  "answerSegments": [
+    { "text": "string fragment", "sourceIds": ["1"] }
+  ],
+  "images": []
+}
+
+Rules:
+- Provide at least 3 and at most 8 sources with sequential string ids "1","2","3",...
+- answerSegments should cover the clinical substance in order; concatenate text should read coherently. Reference source ids that exist in sources.
+- images must be an empty array [] for this response.
+- Be calm, precise, and clinically trustworthy. Acknowledge uncertainty where appropriate.`;
+}
+
 export function soapNotePrompt(transcript: string, customTemplate?: string): string {
   if (customTemplate) {
     return `
