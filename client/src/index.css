@@ -71,6 +71,12 @@ body {
   height: 3.85rem;
 }
 
+@media (max-width: 640px) {
+  .halo-calendar .fc-timegrid-slot {
+    height: 3.25rem;
+  }
+}
+
 .halo-calendar .fc-timegrid-now-indicator-line {
   border-color: #e85d75;
 }

@@ -161,8 +161,8 @@ export const SettingsModal: React.FC<Props> = ({
   const displayName = [form.firstName, form.lastName].filter(Boolean).join(' ') || 'Not set';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg m-4 max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
+      <div className="flex max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-5 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">

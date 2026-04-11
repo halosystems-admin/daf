@@ -20,6 +20,7 @@ interface Props {
   saving: boolean;
   updatedAt: string;
   onAddPatient: () => void;
+  onAddWardRequest: () => void;
 }
 
 export const AdmissionsBoardHeader: React.FC<Props> = ({
@@ -33,17 +34,20 @@ export const AdmissionsBoardHeader: React.FC<Props> = ({
   saving,
   updatedAt,
   onAddPatient,
+  onAddWardRequest,
 }) => {
   return (
-    <div className="border-b border-slate-200/80 bg-white px-5 py-4 backdrop-blur-sm md:px-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
+    <div className="border-b border-slate-200/80 bg-white px-4 py-3 backdrop-blur-sm sm:px-5 sm:py-4 md:px-8">
+      <div className="flex flex-col gap-3 md:gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex items-start gap-2.5 sm:gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 sm:h-11 sm:w-11">
             <LayoutPanelTop className="h-5 w-5" />
           </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-[28px]">Admissions</h1>
-            <p className="mt-0.5 text-sm text-slate-500">
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight text-slate-900 md:text-2xl lg:text-[28px]">
+              Admissions
+            </h1>
+            <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 sm:text-sm">
               Inpatient board — wards, tasks, and handovers in one calm view.
             </p>
           </div>
@@ -76,14 +80,24 @@ export const AdmissionsBoardHeader: React.FC<Props> = ({
               ))}
             </select>
           </label>
-          <button
-            type="button"
-            onClick={onAddPatient}
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-cyan-500 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-600"
-          >
-            <Plus className="h-4 w-4" />
-            Add patient
-          </button>
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+            <button
+              type="button"
+              onClick={onAddWardRequest}
+              className="inline-flex min-h-[44px] min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-800 sm:min-h-10 sm:flex-initial"
+            >
+              <Plus className="h-4 w-4" />
+              Add ward
+            </button>
+            <button
+              type="button"
+              onClick={onAddPatient}
+              className="inline-flex min-h-[44px] min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-500 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-600 sm:min-h-10 sm:flex-initial"
+            >
+              <Plus className="h-4 w-4" />
+              Add patient
+            </button>
+          </div>
         </div>
       </div>
 

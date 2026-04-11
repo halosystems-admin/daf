@@ -77,9 +77,9 @@ export const AdmissionsColumn: React.FC<Props> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex h-full w-[300px] shrink-0 flex-col ${isDragging ? 'opacity-75' : ''}`}
+      className={`flex h-full min-h-0 w-[300px] shrink-0 snap-start flex-col ${isDragging ? 'opacity-75' : ''}`}
     >
-      <div className="mb-3 flex items-start gap-2">
+      <div className="mb-3 flex shrink-0 items-start gap-2">
         <div className="min-w-0 flex-1">
           {isRenaming ? (
             <input

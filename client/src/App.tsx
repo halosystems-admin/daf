@@ -330,7 +330,7 @@ export const App = () => {
 
   if (!isReady) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-white">
+      <div className="flex min-h-dvh w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-3">
           <Loader className="animate-spin text-cyan-600" size={28} />
           <p className="text-sm text-slate-400 font-medium">Loading HALO…</p>
@@ -341,7 +341,7 @@ export const App = () => {
 
   if (!isSignedIn) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-white">
+      <div className="flex min-h-dvh w-full items-center justify-center bg-white pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]">
         <div className="max-w-sm w-full text-center px-6">
           <img
             src="/halo-medical-logo.png"
@@ -372,8 +372,8 @@ export const App = () => {
   const hideSidebarOnMobile = activeMainView === 'workspace' && Boolean(selectedPatientId);
 
   return (
-    <div className="flex h-screen bg-slate-100 font-sans text-slate-900 overflow-hidden relative">
-      <div className={`${hideSidebarOnMobile ? 'hidden md:flex' : 'flex'} h-full shrink-0 z-20`}>
+    <div className="relative flex h-dvh min-h-dvh overflow-hidden bg-slate-100 font-sans text-slate-900">
+      <div className={`${hideSidebarOnMobile ? 'hidden md:flex' : 'flex'} h-dvh min-h-0 shrink-0 z-20`}>
         <Sidebar
           patients={patients}
           selectedPatientId={selectedPatientId}
@@ -399,7 +399,9 @@ export const App = () => {
         />
       </div>
 
-      <div className={`flex-1 flex flex-col h-screen relative ${activeMainView === 'workspace' && !selectedPatientId ? 'hidden md:flex' : 'flex'}`}>
+      <div
+        className={`relative flex min-h-0 flex-1 flex-col h-dvh ${activeMainView === 'workspace' && !selectedPatientId ? 'hidden md:flex' : 'flex'}`}
+      >
         {activeMainView === 'calendar' ? (
           <CalendarPage
             patients={patients}
